@@ -40,6 +40,7 @@ const Register = () => {
             coins: 325,
             level: 3,
           },
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
 

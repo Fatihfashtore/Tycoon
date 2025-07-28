@@ -2,6 +2,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
+import {
+  testDatabaseConnection,
+  testAuthConnection,
+} from "./lib/testConnection";
 import Home from "./components/home";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -12,11 +16,38 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Test connections on app start
+    const initializeApp = async () => {
+      try {
+        // Test auth connection
+        const authTest = await testAuthConnection();
+        if (!authTest.success) {
+          console.error("Auth connection failed:", authTest.error);
+        }
+
+        // Test database connection
+        const dbTest = await testDatabaseConnection();
+        if (!dbTest.success) {
+          console.warn("Database connection test failed:", dbTest.error);
+        }
+
+        // Get initial session
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+        if (error) {
+          console.error("Session error:", error);
+        }
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error("App initialization error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeApp();
 
     // Listen for auth changes
     const {
